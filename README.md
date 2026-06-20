@@ -19,6 +19,7 @@ Then, in any repo:
 ```
 /charter:scaffold project          # settle the docs for a new product
 /charter:milestone M1              # build the first milestone from them
+/charter:milestone next            # …or let Charter pick the next unblocked one
 ```
 
 ### Try it locally (before publishing)
@@ -42,8 +43,9 @@ claude --plugin-dir ./plugins/charter
 | Skill | What it does |
 |-------|--------------|
 | `/charter:scaffold` | Interview-driven authoring of a doc set (project / feature / task), settling each doc before the next. |
-| `/charter:milestone` | Execute one ROADMAP milestone from a doc set — reads the docs, checks dependencies, implements only that milestone. |
+| `/charter:milestone` | Execute one ROADMAP milestone from a doc set — named (`M2`) or auto-selected (`next`); reads the docs, checks dependencies, implements only that milestone. |
 | `/charter:locate-docset` | Resolve which doc set applies here (project / feature / task) and where its docs live. The shared resolver the other skills defer to; also runnable directly. |
+| `/charter:roll-roadmap` | Archive a completed ROADMAP batch to `roadmaps/NN-<label>.md` and seed a fresh ROADMAP from FUTURE. Offered by `milestone` when a batch finishes; project / feature only. |
 
 ## Modes
 
@@ -57,9 +59,10 @@ claude --plugin-dir ./plugins/charter
 
 The two core skills plus the shared `locate-docset` resolver are installable.
 Recently landed: `locate-docset`; the docs-as-SSOT rule written into `.claude/rules/`
-on scaffold (versioned, so existing repos can be offered updates); and task docs
-relocated into the repo's auto-gitignored `.claude/tasks/`. Planned next:
+on scaffold (versioned, so existing repos can be offered updates); task docs relocated
+into the repo's auto-gitignored `.claude/tasks/`; `/charter:milestone next`, which
+auto-picks the next unblocked milestone; and `/charter:roll-roadmap`, the ROADMAP
+lifecycle — archive a completed batch to `roadmaps/NN-<label>.md` and seed the next
+from FUTURE. Planned next:
 
-- ROADMAP lifecycle — archive a completed batch to `roadmaps/NN-<label>.md`, author the next
-- `/charter:milestone next` — auto-pick the next unblocked milestone
 - `reconcile`, `status`, `promote`

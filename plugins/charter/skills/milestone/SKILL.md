@@ -1,11 +1,18 @@
 ---
 name: milestone
-description: Execute a roadmap milestone from a Charter doc set (project/feature/task) produced by /charter:scaffold. Use when implementing a specific milestone — code is written from the docs, not the other way around.
-argument-hint: "<milestone, e.g. M2> [unit or task key]"
+description: Execute a roadmap milestone from a Charter doc set (project/feature/task) produced by /charter:scaffold. Use when implementing a milestone — named explicitly (e.g. M2) or auto-selected with next — code is written from the docs, not the other way around.
+argument-hint: "<milestone (e.g. M2) | next> [unit or task key]"
 ---
 
-Execute milestone **$ARGUMENTS** from a doc set produced by `/charter:scaffold`. Code is
-written *from* the docs, not the other way around.
+Execute a ROADMAP milestone from a doc set produced by `/charter:scaffold` — either the
+one **named in `$ARGUMENTS`** (e.g. `M2`) or, when `$ARGUMENTS` is `next`, the **next
+unblocked milestone**, picked automatically. Code is written *from* the docs, not the
+other way around.
+
+`$ARGUMENTS` is a **milestone selector** — a specific tag (`M2`) or the literal `next` —
+optionally followed by an **identity token** (a unit or task key) that scopes which doc
+set to use. `next` is reserved for auto-selection; any other leading token is treated as
+the milestone tag.
 
 ## Step 1 — Locate the doc set
 
@@ -51,20 +58,41 @@ Honour the SSOT rules stated atop every doc:
   the docs must be updated **first** (with the user's agreement). Never let the
   code silently diverge from the docs.
 
-## Step 3 — Check dependencies before starting
+## Step 3 — Choose the milestone and confirm it's ready
 
-Find the **Depends on:** line for the milestone in `<docs>/ROADMAP.md`. For each
-prerequisite milestone listed, confirm it has landed:
+First decide whether any given milestone has **landed** — the same judgement powers
+both auto-selecting `next` and checking dependencies, and it works identically in every
+mode. Milestone tags **restart at `M1` each batch**, and the current `<docs>/ROADMAP.md`
+holds only the current batch (earlier batches are archived under `roadmaps/`), so the
+authoritative signal is batch-local:
 
-- **With git:** run `git log --grep="<prereq>:"` (e.g. `git log --grep="M2:"`)
-  and confirm at least one matching commit exists. Satisfying commits are
-  subject-prefixed with the milestone tag (optionally after a ticket key, e.g.
-  `BMR-1985 M2: …`). This covers **task mode too** — task *code* commits are tagged
-  and committed to the repo like any other; only the task docs are gitignored.
-- **Without git:** treat the prerequisite's ` [done]` heading in `ROADMAP.md` as the
-  marker instead.
+- **Landed = its heading in the current `<docs>/ROADMAP.md` carries ` [done]`.** For
+  in-repo modes this suffix is flipped *in* the satisfying commit (see Step 5), so it
+  always agrees with the commit record within a batch; in task and no-git modes it's the
+  marker outright.
+- **Don't** decide landedness by grepping all of history (`git log --grep="M1:"`) — a
+  reused `M1` from an archived batch would match. The milestone tag on the commit
+  (`<tag>: …`, optionally after a ticket key) stays the durable landing record; to
+  confirm a commit landed, scope the grep to the current batch (since the last
+  `Roll ROADMAP:` commit).
 
-If anything looks missing, **stop and ask** before continuing.
+Then resolve which milestone to build:
+
+- **A tag was named** (e.g. `M2`): that's the milestone. Find its **Depends on:** line in
+  `<docs>/ROADMAP.md` and confirm every prerequisite has landed by the rule above. If a
+  prerequisite is missing — or the named milestone has already landed — **stop and ask**
+  before continuing.
+- **`next` was given:** scan `<docs>/ROADMAP.md` top-to-bottom and pick the **first
+  milestone that hasn't landed**. Announce the pick — its tag and one-line goal — before
+  starting. Two edge cases, neither resolved silently:
+  - *Its **Depends on:** prerequisites haven't all landed* — the roadmap is out of order,
+    or an earlier milestone was left unfinished. Don't skip ahead; **stop and report**
+    which prerequisite is missing, and ask.
+  - *Every milestone has already landed* — the batch is complete; there's nothing to
+    build. Say so rather than inventing work, and offer `/charter:roll-roadmap` to
+    archive this batch and seed the next ROADMAP from FUTURE (project/feature only).
+
+If anything looks missing or inconsistent, **stop and ask** before continuing.
 
 ## Step 4 — Do the milestone, and only the milestone
 
@@ -87,3 +115,8 @@ is verified, and the user approves:
   committed** — `.claude/tasks/` is gitignored — so it never appears in a PR.
 - **No git at all:** there's no commit to tag — flipping the milestone's
   ` [done]` heading in `ROADMAP.md` is the sole completion marker.
+
+**If that was the last un-done milestone** (project/feature mode), the batch is now
+complete. Tell the user and offer `/charter:roll-roadmap` to archive this ROADMAP to
+`roadmaps/NN-<label>.md` and seed the next batch from FUTURE — don't roll it over
+automatically, since that settles a label and which FUTURE items to promote.

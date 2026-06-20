@@ -12,7 +12,9 @@ the product.
 - `plugins/charter/` — the plugin (name `charter`)
   - `.claude-plugin/plugin.json`
   - `skills/scaffold/SKILL.md` — author a doc set (interview-driven)
-  - `skills/milestone/SKILL.md` — execute one ROADMAP milestone from a doc set
+  - `skills/milestone/SKILL.md` — execute one ROADMAP milestone (named or `next`)
+  - `skills/locate-docset/SKILL.md` — shared resolver: which set applies, where its docs live
+  - `skills/roll-roadmap/SKILL.md` — archive a completed ROADMAP batch, seed the next
 - `README.md` — install + usage
 
 **Procedural truth for each skill lives
@@ -27,9 +29,10 @@ docs-SSOT rule have landed. Build order, roughly in dependency order (✓ = done
 1. ✓ **`locate-docset`** — the shared resolver every other skill calls.
 2. ✓ `.claude/rules/charter.md` written by `scaffold` (the docs-SSOT rule), with a
    `charter-rule vN` marker so existing repos can be offered updates.
-3. ROADMAP lifecycle (archive completed batch to `roadmaps/`).
+3. ✓ ROADMAP lifecycle — `/charter:roll-roadmap` archives a completed batch to
+   `roadmaps/NN-<label>.md` and seeds a fresh ROADMAP from FUTURE.
 4. ✓ Task docs relocated to `.claude/tasks/` (landed with #1).
-5. `milestone next`.
+5. ✓ `milestone next` — auto-select the next unblocked milestone in ROADMAP order.
 6. `reconcile-docs`, `status`, `promote`.
 
 ## Decisions / invariants
@@ -45,10 +48,15 @@ docs-SSOT rule have landed. Build order, roughly in dependency order (✓ = done
   `.claude/rules/charter.md` into the *target* repo so the rule loads every session
   at CLAUDE.md priority (deliberately chosen over a SessionStart hook).
 - **ROADMAP = the current batch of milestones** — forward-looking, **no dates**, not
-  a time-boxed sprint. On completion (all `[done]`), archive to
+  a time-boxed sprint. On completion (all `[done]`), `/charter:roll-roadmap` archives to
   `<doc-root>/roadmaps/NN-<label>.md` (incremental number + label, no dates in the
-  filename, one-line outcome header) and author a fresh ROADMAP seeded from FUTURE.
-  **Project + feature modes only** — task mode keeps no `roadmaps/`.
+  filename, one-line outcome header) and authors a fresh ROADMAP seeded from FUTURE
+  (the rollover commit is subject-prefixed `Roll ROADMAP: …`). **Project + feature
+  modes only** — task mode keeps no `roadmaps/`.
+- **Milestone tags restart at `M1` each batch.** Since the current `ROADMAP.md` holds
+  only the current batch, landedness and dependencies are judged by the ` [done]`
+  heading in that ROADMAP (batch-local, unambiguous) — never by grepping all of git
+  history, which could match a reused tag from an archived batch.
 - **Three modes:** `project` (`docs/`, committed), `feature` (`<unit>/docs/`,
   committed), `task` (ephemeral). Task docs live in the **main worktree's**
   `.claude/tasks/<key>/` (resolve via `git rev-parse --git-common-dir` so worktrees
