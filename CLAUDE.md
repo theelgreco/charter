@@ -21,15 +21,16 @@ is the conventions + pointer layer, not a place to restate skill procedures.
 
 ## Status
 
-Skeleton: `/charter:scaffold` + `/charter:milestone` ported and validating; not yet
-refactored. Deferred work, roughly in order:
+`/charter:scaffold` + `/charter:milestone` validating; the shared resolver and the
+docs-SSOT rule have landed. Build order, roughly in dependency order (✓ = done):
 
-1. **`locate-docset`** skill — build first; everything else depends on it
-2. `.claude/rules/charter.md` written by `scaffold` (the docs-SSOT rule)
-3. ROADMAP lifecycle (archive completed batch to `roadmaps/`)
-4. Task docs relocated to `.claude/tasks/`
-5. `milestone next`
-6. `reconcile-docs`, `status`, `promote`
+1. ✓ **`locate-docset`** — the shared resolver every other skill calls.
+2. ✓ `.claude/rules/charter.md` written by `scaffold` (the docs-SSOT rule), with a
+   `charter-rule vN` marker so existing repos can be offered updates.
+3. ROADMAP lifecycle (archive completed batch to `roadmaps/`).
+4. ✓ Task docs relocated to `.claude/tasks/` (landed with #1).
+5. `milestone next`.
+6. `reconcile-docs`, `status`, `promote`.
 
 ## Decisions / invariants
 
@@ -67,6 +68,9 @@ refactored. Deferred work, roughly in order:
   `claude --plugin-dir ./plugins/charter`, then `/reload-plugins`.
 - **Plugin file references must use `${CLAUDE_PLUGIN_ROOT}`** — installed plugins run
   from a cache and can't read paths outside the plugin dir.
+- **Bump the `charter-rule vN` marker** in `skills/scaffold/templates/charter.md`
+  whenever you change that rule's text — `scaffold` compares versions and offers
+  existing repos the update; skip the bump and they never pick it up.
 - **Frontmatter is strict YAML.** Quote any value starting with `[` or containing
   YAML-significant characters (this bit the `argument-hint` lines).
 - **Commits:** plain messages, **no `Co-Authored-By` trailer**. Commit/push only when

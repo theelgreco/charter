@@ -43,6 +43,7 @@ claude --plugin-dir ./plugins/charter
 |-------|--------------|
 | `/charter:scaffold` | Interview-driven authoring of a doc set (project / feature / task), settling each doc before the next. |
 | `/charter:milestone` | Execute one ROADMAP milestone from a doc set — reads the docs, checks dependencies, implements only that milestone. |
+| `/charter:locate-docset` | Resolve which doc set applies here (project / feature / task) and where its docs live. The shared resolver the other skills defer to; also runnable directly. |
 
 ## Modes
 
@@ -54,12 +55,11 @@ claude --plugin-dir ./plugins/charter
 
 ## Status
 
-Early skeleton — the two core skills are ported from their standalone versions and
-are installable. Planned next:
+The two core skills plus the shared `locate-docset` resolver are installable.
+Recently landed: `locate-docset`; the docs-as-SSOT rule written into `.claude/rules/`
+on scaffold (versioned, so existing repos can be offered updates); and task docs
+relocated into the repo's auto-gitignored `.claude/tasks/`. Planned next:
 
-- `locate-docset` — shared resolver for "which doc set applies here", called by every skill
-- A repo-level docs-as-SSOT rule written into `.claude/rules/` on scaffold
 - ROADMAP lifecycle — archive a completed batch to `roadmaps/NN-<label>.md`, author the next
-- Task docs relocated into the repo's `.claude/tasks/` (auto-gitignored)
 - `/charter:milestone next` — auto-pick the next unblocked milestone
 - `reconcile`, `status`, `promote`

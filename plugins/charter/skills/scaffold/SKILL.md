@@ -82,6 +82,40 @@ directory if it doesn't exist.
 in a repo, add `.claude/tasks/` to the repo's `.gitignore` (append the line if it's
 not already there) so task docs are never committed.
 
+### Write the docs-as-SSOT rule (project & feature modes only)
+
+So the doc set enforces itself every session, Charter writes a repo-wide rule at
+`<repo>/.claude/rules/charter.md` — a plain-markdown rule loads at launch at
+`.claude/CLAUDE.md` priority, which is why this is preferred over a SessionStart
+hook. Do this only for **project and feature** modes (committed sets); **skip it in
+task mode** — task docs are ephemeral and gitignored, and a committed repo-wide rule
+would be an unwanted footprint in someone else's PR.
+
+The bundled template carries a version marker (`<!-- charter-rule vN -->`), bumped
+whenever the rule text changes, so existing repos can pick up improvements without
+losing local edits. Compare the bundled version against the one on disk (`$repo` is
+the committed root, `git rev-parse --show-toplevel`):
+
+```sh
+ver() { grep -o 'charter-rule v[0-9]\+' "$1" 2>/dev/null | grep -o '[0-9]\+' | head -1; }
+new=$(ver "${CLAUDE_PLUGIN_ROOT}/skills/scaffold/templates/charter.md")
+cur=$(ver "$repo/.claude/rules/charter.md")   # empty if the file is absent
+```
+
+Then act on the comparison:
+
+- **Absent** (no `charter.md`) → write it, **verbatim** (don't paraphrase):
+  `mkdir -p "$repo/.claude/rules" && cp "${CLAUDE_PLUGIN_ROOT}/skills/scaffold/templates/charter.md" "$repo/.claude/rules/charter.md"`.
+- **Unmanaged** (`cur` empty but the file exists) → someone hand-wrote it or it
+  predates versioning. **Leave it**; just note it isn't a managed Charter rule.
+- **Current** (`cur == new`) → nothing to do.
+- **Stale** (`cur < new`) → the plugin ships a newer rule. **Tell the user** (old →
+  new) and **offer** to refresh. Overwrite only on a yes — and warn that any local
+  edits would be replaced, so a customised rule can be declined and merged by hand.
+  **Never overwrite silently.**
+
+This is safe to run on every scaffold, including resumes.
+
 ### Resume: check what already exists first
 
 Before drafting anything, use `locate-docset`'s `present` / `exists` report (or
@@ -218,7 +252,9 @@ as the final step** (only in project mode):
 ## After scaffolding
 
 Tell the user the doc set is ready and that work proceeds milestone by milestone
-via `/charter:milestone <M> [unit or task key]`. For **task mode**, remind them the docs
+via `/charter:milestone <M> [unit or task key]`. For **project/feature** sets,
+mention that `.claude/rules/charter.md` was written (if it wasn't already there) so
+the docs-as-SSOT rule loads every session. For **task mode**, remind them the docs
 live in the (gitignored) `.claude/tasks/<key>/` and won't be committed or appear in
 the PR.
 
@@ -230,6 +266,9 @@ the PR.
 - Don't cite docs by section number — use section names.
 - Don't write a CLAUDE.md *for the doc set*. The only CLAUDE.md you ever write is
   the repo's, in project mode, as the final step — and never over an existing one.
+- Don't silently overwrite an existing `.claude/rules/charter.md` — only refresh it
+  when the bundled rule is a newer version *and* the user agrees; and never write one
+  in task mode (committed project/feature sets only).
 - Don't create FUTURE.md in task mode.
 - Don't commit task-mode docs — they live in the **gitignored** `.claude/tasks/`,
   so they're in the working tree but never staged and never in a PR.
