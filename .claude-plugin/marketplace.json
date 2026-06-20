@@ -1,0 +1,16 @@
+{
+  "name": "charter",
+  "owner": {
+    "name": "theelgreco"
+  },
+  "metadata": {
+    "description": "Charter — doc-driven development skills for Claude Code: scaffold a single-source-of-truth doc set and build it milestone by milestone."
+  },
+  "plugins": [
+    {
+      "name": "charter",
+      "source": "./plugins/charter",
+      "description": "Doc-driven development: scaffold PRODUCT/SPEC/DESIGN/ROADMAP/FUTURE doc sets and build them milestone by milestone."
+    }
+  ]
+}
