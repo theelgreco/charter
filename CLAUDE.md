@@ -15,6 +15,8 @@ the product.
   - `skills/milestone/SKILL.md` — execute one ROADMAP milestone (named or `next`)
   - `skills/locate-docset/SKILL.md` — shared resolver: which set applies, where its docs live
   - `skills/roll-roadmap/SKILL.md` — archive a completed ROADMAP batch, seed the next
+  - `skills/status/SKILL.md` — read-only report: doc-set completeness + milestone state
+  - `skills/reconcile-docs/SKILL.md` — reconcile the docs with the code as built
 - `README.md` — install + usage
 
 **Procedural truth for each skill lives
@@ -33,7 +35,8 @@ docs-SSOT rule have landed. Build order, roughly in dependency order (✓ = done
    `roadmaps/NN-<label>.md` and seeds a fresh ROADMAP from FUTURE.
 4. ✓ Task docs relocated to `.claude/tasks/` (landed with #1).
 5. ✓ `milestone next` — auto-select the next unblocked milestone in ROADMAP order.
-6. `reconcile-docs`, `status`, `promote`.
+6. ✓ `status` (read-only doc-set + milestone report) and `reconcile-docs` (guided
+   two-way doc↔code reconciliation).
 
 ## Decisions / invariants
 

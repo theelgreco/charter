@@ -46,6 +46,8 @@ claude --plugin-dir ./plugins/charter
 | `/charter:milestone` | Execute one ROADMAP milestone from a doc set — named (`M2`) or auto-selected (`next`); reads the docs, checks dependencies, implements only that milestone. |
 | `/charter:locate-docset` | Resolve which doc set applies here (project / feature / task) and where its docs live. The shared resolver the other skills defer to; also runnable directly. |
 | `/charter:roll-roadmap` | Archive a completed ROADMAP batch to `roadmaps/NN-<label>.md` and seed a fresh ROADMAP from FUTURE. Offered by `milestone` when a batch finishes; project / feature only. |
+| `/charter:status` | Report where a doc set stands — which docs are settled and where each milestone sits (done / next / blocked). Read-only; changes nothing. |
+| `/charter:reconcile-docs` | Reconcile a doc set with the code as built — surface every doc↔code drift, then update the stale doc or flag the wrongly-diverged code, item by item. |
 
 ## Modes
 
@@ -53,16 +55,15 @@ claude --plugin-dir ./plugins/charter
 |------|----------|------------|
 | **project** | repo-root `docs/` | yes |
 | **feature** | `<unit>/docs/` | yes |
-| **task** | host path (ephemeral) | no |
+| **task** | `.claude/tasks/<key>/` (gitignored) | no |
 
 ## Status
 
-The two core skills plus the shared `locate-docset` resolver are installable.
-Recently landed: `locate-docset`; the docs-as-SSOT rule written into `.claude/rules/`
-on scaffold (versioned, so existing repos can be offered updates); task docs relocated
-into the repo's auto-gitignored `.claude/tasks/`; `/charter:milestone next`, which
-auto-picks the next unblocked milestone; and `/charter:roll-roadmap`, the ROADMAP
-lifecycle — archive a completed batch to `roadmaps/NN-<label>.md` and seed the next
-from FUTURE. Planned next:
-
-- `reconcile`, `status`, `promote`
+All skills are installable. Recently landed: `/charter:status`, a read-only report of a
+doc set's completeness and milestone state (done / next / blocked); and
+`/charter:reconcile-docs`, guided two-way reconciliation of the docs against the code as
+built. Earlier: `locate-docset`; the docs-as-SSOT rule written into `.claude/rules/` on
+scaffold (versioned, so existing repos can be offered updates); task docs relocated into
+the repo's auto-gitignored `.claude/tasks/`; `/charter:milestone next`, which auto-picks
+the next unblocked milestone; and `/charter:roll-roadmap`, the ROADMAP lifecycle —
+archive a completed batch to `roadmaps/NN-<label>.md` and seed the next from FUTURE.
