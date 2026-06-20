@@ -43,19 +43,14 @@ doc.
     from the cwd; if there's no natural code home yet, fall back to
     `docs/<feature>/` at the repo root.
   - **task** — an ephemeral, often cross-cutting chunk of work (one ticket's
-    worth). Throwaway: when the work lands, the docs are done. Doc root =
-    `~/.claude/projects/<encoded-repo-root>/tasks/<key>/`, where:
-    - `<key>` is the ticket key or branch/feature name, and
-    - `<encoded-repo-root>` is the **main worktree root** path with every
-      non-alphanumeric character replaced by `-` (e.g. `/Users/me/git/app` →
-      `-Users-me-git-app`). Derive the main worktree root from git so **every
-      worktree and chat for this task shares one doc set**:
-      `root=$(cd "$(git rev-parse --git-common-dir)/.." && pwd)`. If this isn't a
-      git repo, encode the cwd instead and tell the user the set won't be shared
-      across worktrees.
-
-      This is a **fixed host path**, the same regardless of which worktree you're
-      in. It is **never committed** and never appears in a PR.
+    worth). Throwaway: when the work lands, the docs are done. Doc root = the
+    **main worktree's** `.claude/tasks/<key>/`, where `<key>` is the ticket key or
+    branch/feature name. It lives in the main worktree (resolved via
+    `git rev-parse --git-common-dir`) so **every worktree and chat for this task
+    shares one doc set**, and it is **gitignored** — in the working tree but never
+    committed and never in a PR. `locate-docset` derives the exact path (and the
+    non-git fallback, which keys off the cwd and isn't shared across worktrees);
+    see the resolve step below.
 
 - **UI surface?** If the work has a meaningful UI surface, include **DESIGN.md**.
   Otherwise omit it.
@@ -67,19 +62,30 @@ answer:
 |------|----------|------------|------|
 | project | repo-root `docs/` | yes | PRODUCT · SPEC · [DESIGN if UI] · [ROADMAP if built directly] · FUTURE |
 | feature | `<unit>/docs/` | yes | PRODUCT · SPEC · [DESIGN if UI] · ROADMAP · FUTURE |
-| task | host path above | **no** | PRODUCT · SPEC · [DESIGN if UI] · ROADMAP |
+| task | `.claude/tasks/<key>/` (main worktree, gitignored) | **no** | PRODUCT · SPEC · [DESIGN if UI] · ROADMAP |
 
 Task mode has **no FUTURE.md** — the docs are ephemeral, so a standalone deferred
 backlog would be orphaned the moment the task lands. Its scope-fence function
 moves into ROADMAP's **Out of scope** section, and anything worth keeping past
 the task is promoted to a **tracker ticket**, not a file.
 
-Create the doc-root directory if it doesn't exist.
+### Resolve the doc root with `locate-docset`
+
+Once mode + identity are settled, **resolve the doc root with `locate-docset`**
+rather than deriving the path here: read
+`${CLAUDE_PLUGIN_ROOT}/skills/locate-docset/SKILL.md` and follow it, passing the
+**explicit** mode and identity you just settled. It returns the `docs` path plus
+`exists` / `present` — which powers the resume check below. Create the doc-root
+directory if it doesn't exist.
+
+**First task set only:** when you create the very first `.claude/tasks/<key>/` set
+in a repo, add `.claude/tasks/` to the repo's `.gitignore` (append the line if it's
+not already there) so task docs are never committed.
 
 ### Resume: check what already exists first
 
-Before doing anything else, **scan the doc root** for docs that are already
-written. For each that exists, read it (it's an authoritative, settled input).
+Before drafting anything, use `locate-docset`'s `present` / `exists` report (or
+**scan the doc root** yourself) for docs that are already written. For each that exists, read it (it's an authoritative, settled input).
 Then report the set's state to the user — e.g. `PRODUCT settled ✓ · SPEC settled
 ✓ · DESIGN missing · ROADMAP missing` — and pick up at the **next unsettled
 doc** (or the one named by the trailing DOC arg). Never silently restart a set
@@ -213,7 +219,8 @@ as the final step** (only in project mode):
 
 Tell the user the doc set is ready and that work proceeds milestone by milestone
 via `/charter:milestone <M> [unit or task key]`. For **task mode**, remind them the docs
-live at the host path and won't be committed or appear in the PR.
+live in the (gitignored) `.claude/tasks/<key>/` and won't be committed or appear in
+the PR.
 
 ## Things to NOT do
 
@@ -224,8 +231,8 @@ live at the host path and won't be committed or appear in the PR.
 - Don't write a CLAUDE.md *for the doc set*. The only CLAUDE.md you ever write is
   the repo's, in project mode, as the final step — and never over an existing one.
 - Don't create FUTURE.md in task mode.
-- Don't commit task-mode docs, and don't put them inside the repo working tree —
-  they live only at the fixed host path.
+- Don't commit task-mode docs — they live in the **gitignored** `.claude/tasks/`,
+  so they're in the working tree but never staged and never in a PR.
 - Don't restart or overwrite a doc set that's already partly built — resume from
   what's on disk.
 - Don't start the next doc before the current one is signed off — the set is

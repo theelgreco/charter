@@ -9,47 +9,25 @@ written *from* the docs, not the other way around.
 
 ## Step 1 — Locate the doc set
 
-A milestone lives in a doc set produced by `/charter:scaffold`, in one of three places
-(see `/charter:scaffold` for how they're created):
+A milestone lives in a doc set produced by `/charter:scaffold`, in one of three
+modes — **project** / **feature** (in-repo, committed) or **task** (in the main
+worktree's `.claude/tasks/<key>/`, gitignored, never committed).
 
-- **project** (in-repo): repo-root `docs/` — the SSOT for a whole product.
-  Has a `ROADMAP.md` only when the product is *built directly* from the root docs
-  (smaller products). Larger, *decomposed* projects keep no root ROADMAP —
-  roadmapping lives in the per-feature sets.
-- **feature** (in-repo): `<unit>/docs/` — the permanent SSOT for one unit
-  (module / package / domain / service), e.g. `billing/docs/`. If the unit had no
-  natural code home at scaffold time, the set may instead live at repo-root
-  `docs/<unit>/`.
-- **task** (host, not in git): `~/.claude/projects/<encoded-repo-root>/tasks/<key>/`
-  — an ephemeral, cross-cutting chunk keyed by ticket key or branch/feature name.
-  `<encoded-repo-root>` is the **main worktree root** with every non-alphanumeric
-  character replaced by `-` (e.g. `/Users/me/git/app` → `-Users-me-git-app`).
-  Derive it from git so every worktree/chat for the task shares one set:
-  `root=$(cd "$(git rev-parse --git-common-dir)/.." && pwd)`. This is a **fixed
-  host path**, the same regardless of which worktree you're in. If the repo isn't
-  under git, `/charter:scaffold` keyed the set off the cwd instead — encode the cwd to find it.
+**Resolve it with the `locate-docset` skill** instead of re-deriving the rules
+here: read `${CLAUDE_PLUGIN_ROOT}/skills/locate-docset/SKILL.md` and follow it,
+passing through any identity token in `$ARGUMENTS` (a unit or task key). **Don't**
+pass a mode — let it *infer* from the arguments, the cwd, the git branch, and
+what's on disk; a milestone's set must already exist. It reports `mode`, `docs`
+(the doc root — call it `<docs>` below), `committed`, `unit`/`key`, `exists`,
+`present`, and `has_roadmap`.
 
-Resolve which set this milestone belongs to, in order:
+If it can't settle on a single existing set — e.g. a **decomposed project**
+(repo-root `docs/` with no `ROADMAP.md`, where roadmapping lives in the per-feature
+sets) or nothing matched — it stops and asks; surface that rather than guessing.
 
-1. If `$ARGUMENTS` includes an identity token whose `<unit>/docs/ROADMAP.md` or
-   repo-root `docs/<unit>/ROADMAP.md` (the `/charter:scaffold` no-code-home fallback)
-   exists → **feature mode**.
-2. Else if a token (or the current git branch) yields a task `<key>` whose
-   host-path `ROADMAP.md` exists → **task mode**. Try the bare key too (e.g.
-   `BMR-1985` from `BMR-1985-watchlist-webhook`).
-3. Else if the cwd is under a unit dir with `docs/ROADMAP.md` → **feature mode**.
-4. Else if repo-root `docs/ROADMAP.md` exists → **project mode**.
-5. Else if repo-root `docs/` exists but has **no** `ROADMAP.md` → this is a
-   *decomposed* project. Stop and tell the user roadmapping lives in the
-   per-feature sets; list the `*/docs/ROADMAP.md` and `docs/*/ROADMAP.md` files
-   found and ask which unit.
-6. Else **stop and ask** which doc set this milestone belongs to — list every
-   `ROADMAP.md` found under the repo and under the tasks dir.
-
-Call the resolved directory `<docs>`. **Project and feature are both in-repo and
-are handled identically from here** (committed, milestone-tagged commits); only
-**task mode** differs — its docs live on the host, are never committed, and don't
-appear in a PR.
+**Project and feature are handled identically from here** (committed,
+milestone-tagged commits); only **task mode** differs — its docs live in
+`.claude/tasks/`, are never committed, and don't appear in a PR.
 
 ## Step 2 — Read the docs in order
 
@@ -81,9 +59,10 @@ prerequisite milestone listed, confirm it has landed:
 - **With git:** run `git log --grep="<prereq>:"` (e.g. `git log --grep="M2:"`)
   and confirm at least one matching commit exists. Satisfying commits are
   subject-prefixed with the milestone tag (optionally after a ticket key, e.g.
-  `BMR-1985 M2: …`).
-- **Without git** (or for task-mode docs, whose host dir isn't git): treat the
-  prerequisite's ` [done]` heading in `ROADMAP.md` as the marker instead.
+  `BMR-1985 M2: …`). This covers **task mode too** — task *code* commits are tagged
+  and committed to the repo like any other; only the task docs are gitignored.
+- **Without git:** treat the prerequisite's ` [done]` heading in `ROADMAP.md` as the
+  marker instead.
 
 If anything looks missing, **stop and ask** before continuing.
 
@@ -101,9 +80,10 @@ is verified, and the user approves:
 - **In-repo (project / feature):** the satisfying commit is subject-prefixed with
   the milestone tag (`<milestone>: …`) and, **in the same commit**, flips the
   milestone's `ROADMAP.md` heading to suffix ` [done]`.
-- **Task mode** (docs on the host, not in git): the satisfying *code* commit is
-  subject-prefixed `<milestone>: …` (after the ticket key is fine); flip the
-  milestone's heading to ` [done]` in the host-dir `ROADMAP.md` once that commit
-  lands. The doc edit isn't committed anywhere — the host dir is not a git repo.
+- **Task mode** (docs in `.claude/tasks/`, gitignored): the satisfying *code* commit
+  is subject-prefixed `<milestone>: …` (after the ticket key is fine) and lands in
+  the repo like any other; flip the milestone's heading to ` [done]` in
+  `.claude/tasks/<key>/ROADMAP.md` once that commit lands. That doc edit is **not
+  committed** — `.claude/tasks/` is gitignored — so it never appears in a PR.
 - **No git at all:** there's no commit to tag — flipping the milestone's
   ` [done]` heading in `ROADMAP.md` is the sole completion marker.
