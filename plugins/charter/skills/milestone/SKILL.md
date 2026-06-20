@@ -70,11 +70,11 @@ authoritative signal is batch-local:
   in-repo modes this suffix is flipped *in* the satisfying commit (see Step 5), so it
   always agrees with the commit record within a batch; in task and no-git modes it's the
   marker outright.
-- **Don't** decide landedness by grepping all of history (`git log --grep="M1:"`) — a
-  reused `M1` from an archived batch would match. The milestone tag on the commit
-  (`<tag>: …`, optionally after a ticket key) stays the durable landing record; to
-  confirm a commit landed, scope the grep to the current batch (since the last
-  `Roll ROADMAP:` commit).
+- **Don't** decide landedness by grepping all of history — a reused `M1` from an
+  archived batch would match. The milestone tag carried in the commit subject (in
+  whatever form the repo's commit convention takes — see Step 5) stays the durable
+  landing record; to confirm a commit landed, scope the search to the current batch
+  (since the last `Roll ROADMAP:` commit).
 
 Then resolve which milestone to build:
 
@@ -105,16 +105,23 @@ DESIGN section (and prototype screen, if one is referenced) first.
 Don't commit unless the user asks. When the acceptance criteria are met, the work
 is verified, and the user approves:
 
-- **In-repo (project / feature):** the satisfying commit is subject-prefixed with
-  the milestone tag (`<milestone>: …`) and, **in the same commit**, flips the
-  milestone's `ROADMAP.md` heading to suffix ` [done]`.
+The ` [done]` heading is the **authoritative completion marker** in every mode — what
+`status`, prereq checks, and `roll-roadmap` read. The commit subject is only the
+human-readable record, and follows **the repo's commit convention**: if `CLAUDE.md` /
+`AGENTS.md` states one (or recent `git log` shows a clear pattern), match it and keep
+the milestone tag identifiable within it; **otherwise default to `<milestone>: …`**.
+Never *rely* on the commit subject to detect completion — that's the heading's job.
+
+- **In-repo (project / feature):** in the **same commit** that completes the work, flip
+  the milestone's `ROADMAP.md` heading to suffix ` [done]`. Subject per the repo
+  convention above (default `<milestone>: …`).
 - **Task mode** (docs in `.claude/tasks/`, gitignored): the satisfying *code* commit
-  is subject-prefixed `<milestone>: …` (after the ticket key is fine) and lands in
-  the repo like any other; flip the milestone's heading to ` [done]` in
-  `.claude/tasks/<key>/ROADMAP.md` once that commit lands. That doc edit is **not
+  lands in the repo like any other (subject per the repo convention, default
+  `<milestone>: …`, after a ticket key is fine); flip the milestone's heading to
+  ` [done]` in `.claude/tasks/<key>/ROADMAP.md` once it lands. That doc edit is **not
   committed** — `.claude/tasks/` is gitignored — so it never appears in a PR.
-- **No git at all:** there's no commit to tag — flipping the milestone's
-  ` [done]` heading in `ROADMAP.md` is the sole completion marker.
+- **No git at all:** there's no commit to tag — flipping the ` [done]` heading in
+  `ROADMAP.md` is the sole completion marker.
 
 **If that was the last un-done milestone** (project/feature mode), the batch is now
 complete. Tell the user and offer `/charter:roll-roadmap` to archive this ROADMAP to
