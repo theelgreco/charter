@@ -1,7 +1,7 @@
 {
   "name": "charter",
   "description": "Doc-driven development for any repo. Scaffold a single-source-of-truth doc set (PRODUCT/SPEC/DESIGN/ROADMAP/FUTURE) for a project, feature, or task, then build it milestone by milestone from those docs.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "theelgreco"
   },
